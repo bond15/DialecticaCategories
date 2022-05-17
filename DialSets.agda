@@ -21,7 +21,7 @@ postulate
     -- here we postulate a monoidal product on Two
 
 record DialSet {ℓ : Level} : Set (lsuc ℓ) where
-    constructor ⟨_⇒_⇒2⟩∋_
+    constructor ⟨_,_,_⟩
     field
         U : Set ℓ 
         X : Set ℓ
@@ -53,27 +53,99 @@ record DialSetMap {ℓ} (A B : DialSet {ℓ}) : Set ℓ where
     field 
         f : U → V
         F : U → Y → X 
-        cond : (u : U)(y : Y) → α u (F u y) ≤₂ β (f u) y
+        cond-on-f&F : (u : U)(y : Y) → α u (F u y) ≤₂ β (f u) y
+
+
+{-
+    show DialSets is category
+    ! is an endofunctor on DialSets
+-}
+
+
+_∘_ : {A B C : DialSet} → (g : DialSetMap B C) → ( f : DialSetMap A B) → DialSetMap A C
+record { f = f₁ ; F = F₁ ; cond-on-f&F = cond₁} ∘ record { f = f₂ ; F = F₂ ; cond-on-f&F = cond₂} = 
+    record { f = f­₂ ∘ f₁ ; 
+             F =    ∘ f₂ ;  
+             cond-on-f&F = ?}
+
 
 
 -- need a monoidal operation to combine elements of Two
 -- similar to https://github.com/heades/cut-fill-agda/blob/5ae2c4bde0b7c63930cf8ab2733e3eef071672c1/DialSets.agda#L144
-infix 2 _⊗ᴰ_ 
+{- infix 2 _⊗ᴰ_ 
 _⊗ᴰ_ : DialSet → DialSet → DialSet
 ⟨ U ⇒ X ⇒2⟩∋ α ⊗ᴰ ⟨ V ⇒ Y ⇒2⟩∋ β = ⟨ U × V ⇒ (V → X) × (U → Y) ⇒2⟩∋ m
 
                 where m : U × V → (V → X) × (U → Y) → Two
                       m (u , v) (V⇒X , U⇒Y) = α u (V⇒X v) ⊗² β v (U⇒Y u)
-
+-}
 -- how do I write the above?
 
 --  monoidal structures on DialSet
 -- tensor \ox
 -- Ayᴮ × Cyᴰ = ACyᴮᴰ
+
+postulate 
+    _∧_  : Two → Two → Two 
+
+_⊗ᴰ_ : DialSet → DialSet → DialSet
+⟨ U , X , α ⟩ ⊗ᴰ ⟨ V , Y , β ⟩ = ⟨ U × V , X × Y , m ⟩ 
+    where m : U × V  → X × Y → Two
+          m (u , v) (x , y) =  α u x ∧ β v y 
+
+--product \&
+-- Ayᴮ × Cyᴰ = ACyᴮ⁺ᴰ
+
+_&_ : DialSet → DialSet → DialSet
+⟨ U , X , α ⟩ & ⟨ V , Y , β ⟩ = ⟨ U × V  , X ⊎ Y , choose ⟩
+    where choose : U × V → X ⊎ Y → Two 
+          choose (u , v) (inj₁ x) = α u x 
+          choose (u , v) (inj₂ y) = β v y
+
+-- internal hom (bifunctor)
+-- prove "profunctor"
+_[-,-]_ : DialSet → DialSet → DialSet
+⟨ U , X , α ⟩ [-,-] ⟨ V , Y , β ⟩ = ⟨ U → V × (U x Y → X) , U x Y , ? ⟩ -- prove condition
+
+-- sym mon closed
+-- content from ch 1
+-- prove : A ⊗ B → C ⇔ A → [B,C] 
+
+-- TODO renaming GC
 {-
-_⊗ₚ_ : DialSet → DialSet → DialSet
-a ⊗ₚ b = record { U × V ; X x Y }; alpha x beta } 
+    Monoids and Comonoids for ⊗ᴰ 
+    Monoids (collectives in Nelson's notes)
+
 -}
+
+
+---- Symetric monoidal Cat
+
+-- TODO check
+record SymetricMonoid (A : Set) : Set where
+    field 
+        e : A
+        _∙_ : A → A → A 
+
+        sym : (a b : A) → a ∙ b ≡ b ∙ a
+        l-unit : (a : A) → e ∙ a ≡ a
+        r-unit : (a : A) → a ∙ e ≡ a
+        assoc : (a b c : A) → (a ∙ b) ∙ c ≡ a ∙ (b ∙ c)
+
+
+
+
+
+
+
+
+
+
+     
+--⟨ U × V , X x Y , alpha x beta ⟩ 
+
+
+{-
 infix 2 _⅋_ 
 _⅋_ : DialSet → DialSet → DialSet
 ⟨ U ⇒ X ⇒2⟩∋ α ⅋ ⟨ V ⇒ Y ⇒2⟩∋ β = ⟨ U × V ⇒ X ⊎ Y ⇒2⟩∋ m
@@ -82,7 +154,7 @@ _⅋_ : DialSet → DialSet → DialSet
               m (u , v) (inj₁ x) = α u x
               m (u , v) (inj₂ y) = β v y  
 
-
+-}
 {-
 --product \&
 -- Ayᴮ × Cyᴰ = ACyᴮ⁺ᴰ
